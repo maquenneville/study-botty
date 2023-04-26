@@ -3,9 +3,9 @@
 StudyBotty is an AI-powered question-answering system that helps users find answers to their questions using a combination of pre-loaded documents, tables, and online resources.
 
 # Features
-- Ingests documents from various file formats (PDF, DOCX, CSV, XLSX, and TXT).
+- Ingests documents from various file formats (PDF, DOCX, CSV, XLSX, TXT, and various image formats).
 - Processes and stores document embeddings for quick context retrieval.
-- Determines the appropriate agent (DocAgent, TableAgent, or MathAgent, more to come) to answer a given question.
+- Determines the appropriate agent (DocAgent, TableAgent, MathAgent, or LiteratureAgent, more to come) to answer a given question.
 - If an answer isn't found within the pre-loaded documents, AutoTutor searches Google for additional context.
 - Utilizes OpenAI's ChatGPT for natural language understanding and generation.
 
@@ -24,7 +24,7 @@ python study_botty.py
 
 - StudyBotty will prompt you to add a folder of documents. If you choose to add documents, enter the folder path when prompted. StudyBotty will ingest the documents, process them, and store their embeddings.
 
-Once the setup is complete, StudyBotty will be ready to answer your questions. Enter your question at the prompt, and AutoTutor will use the appropriate agent to find the best answer. If an answer cannot be found within the pre-loaded documents, StudyBotty will search Google for additional context before attempting to answer your question again.
+Once the setup is complete, StudyBotty will be ready to answer your questions. Enter your question at the prompt, and StudyBotty will use the appropriate agent to find the best answer. If an answer cannot be found within the pre-loaded documents, StudyBotty will search Google for additional context before attempting to answer your question again.
 
 To exit StudyBotty, type "exit" at the question prompt.
 
