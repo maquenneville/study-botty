@@ -6,18 +6,10 @@ Created on Sun Apr 23 18:01:28 2023
 """
 
 from openai_pinecone_tools import generate_response
-import tiktoken
 import configparser
 import openai
 
 
-encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-
-
-
-def count_tokens(text):
-    tokens = len(encoding.encode(text))
-    return tokens
 
 def get_api_keys(config_file):
     config = configparser.ConfigParser()
@@ -48,6 +40,7 @@ Agent List:
 DocAgent:  For basic questions over regular documentation, essays, syllabi, reading materials, and web page text/summaries.
 TableAgent: For questions regarding provided comma seperated value text data.
 MathAgent: For math-based or quantity-based questions.  It has access to Wolfram Alpha and all it's datasets.
+LiteratureAgent: For questions regarding English Literature.  Best used for more subjective and/or nuanced questions around writing and literature, that require more in-depth answers.
 """
 
 def headmaster_agent(query, context, agent_list=AGENT_LIST):
@@ -78,6 +71,8 @@ def headmaster_agent(query, context, agent_list=AGENT_LIST):
         agent = "TableAgent"
     elif "MathAgent" in selection:
         agent = "MathAgent"
+    elif "LiteratureAgent" in selection:
+        agent = "LiteratureAgent"
     else:
         print("Headmaster was unsure who to delegate to")
         

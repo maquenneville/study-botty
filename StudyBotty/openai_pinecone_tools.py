@@ -234,3 +234,9 @@ def generate_response(
 
 
 #print(fetch_context_from_pinecone("What are the columns in the Raw Mussel data 2017 (1) table?"))
+# =============================================================================
+# print(generate_response([
+#     {"role": "system", "content": "You are a helpful assistant."},
+#     {"role": "user", "content": "Tell me a joke."}
+#     ], model_engine="gpt-4"))
+# =============================================================================

@@ -77,26 +77,21 @@ def main():
         # Retrieve the context from Pinecone
         context = fetch_context_from_pinecone(query)
         
-
-
-        
         faculty = headmaster_agent(query, context)
         
         if faculty == "DocAgent":
-            
             answer = doc_agent(query, context)
         elif faculty == "TableAgent":
-            
             answer = table_agent(query, context)
         elif faculty == "MathAgent":
-            
             answer = math_agent(query, context)
+        elif faculty == "LiteratureAgent":
+            answer = literature_agent(query, context)
             
         # Check if ChatGPT answered the query with the given context
         did_answer = answer_decision_agent(query, context, answer)
 
         if not did_answer:
-
 
             # If ChatGPT cannot answer with the given context, use the google_search_agent
             context = google_search_agent(query)
@@ -109,6 +104,8 @@ def main():
                 answer = table_agent(query, context)
             elif faculty == "MathAgent":
                 answer = math_agent(query, context)
+            elif faculty == "LiteratureAgent":
+                answer = literature_agent(query, context)
 
         # Stop the spinner before printing the answer
         spinner.stop()

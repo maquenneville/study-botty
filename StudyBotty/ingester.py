@@ -14,11 +14,41 @@ import io
 from pdfminer.high_level import extract_text
 import os
 import tiktoken
-import os
 from openai_pinecone_tools import generate_response
+import pytesseract
+from PIL import Image, ImageFile, ImageOps, UnidentifiedImageError
 
 
 encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+#Set ImageFile to accept truncated images
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+# Declare tesseract.exe
+tesseract_path = "C:\Program Files\Tesseract-OCR\tesseract.exe"
+pytesseract.tesseract_cmd = tesseract_path
+
+
+def ocr_read_image(image_path):
+
+
+    # Check if the file exists
+    if not os.path.exists(image_path):
+        raise ValueError("The file does not exist.")
+
+    # Check if the file has a supported image extension
+    supported_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff'}
+    file_ext = os.path.splitext(image_path)[1].lower()
+    if file_ext not in supported_extensions:
+        raise ValueError("Unsupported file extension. Please provide a supported image file.")
+
+    # Open the image file
+    image = Image.open(image_path)
+
+    # Perform OCR on the image
+    text = pytesseract.image_to_string(image)
+
+    return text
+
 
 
 def read_pdf(file_path):
@@ -163,6 +193,8 @@ def ingester(file_path):
         return process_table_file(file_path)
     elif extension == "txt":
         return read_txt(file_path)
+    elif extension in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']:
+        return ocr_read_image(file_path)
     else:
         print(f"Unsupported file type: {extension}")
         return ""
