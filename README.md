@@ -6,7 +6,7 @@ StudyBotty is an AI-powered question-answering system that helps users find answ
 - Ingests documents from various file formats (PDF, DOCX, CSV, XLSX, TXT, and various image formats).
 - Processes and stores document embeddings for quick context retrieval.
 - Determines the appropriate agent (DocAgent, TableAgent, MathAgent, or LiteratureAgent, more to come) to answer a given question.
-- If an answer isn't found within the pre-loaded documents, AutoTutor searches Google for additional context.
+- If an answer isn't found within the pre-loaded documents, StudyBotty searches Google for additional context.
 - Utilizes OpenAI's ChatGPT for natural language understanding and generation.
 
 # Setup
