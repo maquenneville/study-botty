@@ -12,6 +12,7 @@ from searchagent import *
 from mathagent import *
 from tableagent import *
 from headmasteragent import *
+from science_agent import *
 from tqdm.auto import tqdm
 import threading
 import time
@@ -87,6 +88,8 @@ def main():
             answer = math_agent(query, context)
         elif faculty == "LiteratureAgent":
             answer = literature_agent(query, context)
+        elif faculty == "ScienceAgent":
+            answer = science_agent(query, context)
             
         # Check if ChatGPT answered the query with the given context
         did_answer = answer_decision_agent(query, context, answer)

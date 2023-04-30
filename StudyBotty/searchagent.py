@@ -9,64 +9,16 @@ Created on Sat Apr 22 00:06:55 2023
 
 import requests
 from bs4 import BeautifulSoup
-from googlesearch import search
 import re
-from openai_pinecone_tools import generate_response, create_embeddings_dataframe, store_embeddings_in_pinecone, fetch_context_from_pinecone
+from openai_pinecone_tools import *
 from ingester import chunk_text
 from nltk.tokenize import sent_tokenize
-import tiktoken
-import configparser
-import openai
-from openai.error import RateLimitError, InvalidRequestError, APIError
-import pinecone
-from pinecone import PineconeProtocolError
-import time
 from urllib.parse import unquote, urlparse, urljoin
 import wikipedia
-from wikipedia.exceptions import PageError
 from typing import Set
 from googleapiclient.discovery import build
 import os
 
-
-encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-
-
-
-def count_tokens(text):
-    tokens = len(encoding.encode(text))
-    return tokens
-
-def get_api_keys(config_file):
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    openai_api_key = config.get("API_KEYS", "OpenAI_API_KEY")
-    pinecone_api_key = config.get("API_KEYS", "Pinecone_API_KEY")
-    pinecone_env = config.get("API_KEYS", "Pinecone_ENV")
-    index = config.get("API_KEYS", "Pinecone_Index")
-    namespace = config.get("API_KEYS", "Namespace")
-    google_namespace = config.get("API_KEYS", "Google_Namespace")
-    google_api_key = config.get('API_KEYS', 'Google_API_KEY')
-    google_id = config.get('API_KEYS', 'Google_Search_ID')
-
-    return openai_api_key, pinecone_api_key, pinecone_env, index, namespace, google_namespace, google_api_key, google_id
-
-openai_api_key, pinecone_api_key, pinecone_env, index, namespace, google_namespace, google_api_key, google_id = get_api_keys('config.ini')
-
-openai.api_key = openai_api_key
-
-
-
-CHAT_MODEL = "gpt-3.5-turbo"
-EMBEDDING_MODEL = "text-embedding-ada-002"
-PINECONE_INDEX = index
-PINECONE_NAMESPACE = namespace
-PINECONE_API_KEY = pinecone_api_key
-PINECONE_ENV = pinecone_env
-GOOGLE_NAMESPACE = google_namespace
-GOOGLE_API_KEY = google_api_key
-GOOGLE_ID = google_id
 
 def sanitize_url(url: str) -> str:
     """Sanitize the URL
@@ -395,7 +347,6 @@ def google_search_agent(query, namespace=GOOGLE_NAMESPACE, index=PINECONE_INDEX,
         link_df = process_url(link)
         store_embeddings_in_pinecone(dataframe=link_df, namespace=GOOGLE_NAMESPACE)
     
-    time.sleep(10)
     
     context = fetch_context_from_pinecone(query, namespace=GOOGLE_NAMESPACE)
     

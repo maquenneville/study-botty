@@ -5,54 +5,8 @@ Created on Sun Apr 23 13:58:21 2023
 @author: marca
 """
 
-from openai_pinecone_tools import generate_response
-from nltk.tokenize import sent_tokenize
-import tiktoken
-import configparser
-import openai
-from openai.error import RateLimitError, InvalidRequestError, APIError
-import pinecone
-from pinecone import PineconeProtocolError
+from openai_pinecone_tools import *
 import wolframalpha
-
-
-encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-
-
-
-def count_tokens(text):
-    tokens = len(encoding.encode(text))
-    return tokens
-
-def get_api_keys(config_file):
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    openai_api_key = config.get("API_KEYS", "OpenAI_API_KEY")
-    pinecone_api_key = config.get("API_KEYS", "Pinecone_API_KEY")
-    pinecone_env = config.get("API_KEYS", "Pinecone_ENV")
-    index = config.get("API_KEYS", "Pinecone_Index")
-    namespace = config.get("API_KEYS", "Namespace")
-    wolfram_api_key = config.get("API_KEYS", "Wolfram_API_KEY")
-    wolfram_name = config.get("API_KEYS", "Wolfram_Name")
-
-    return openai_api_key, pinecone_api_key, pinecone_env, index, namespace, wolfram_api_key, wolfram_name
-
-openai_api_key, pinecone_api_key, pinecone_env, index, namespace, wolfram_api_key, wolfram_name  = get_api_keys('config.ini')
-
-openai.api_key = openai_api_key
-
-
-CHAT_MODEL = "gpt-3.5-turbo"
-EMBEDDING_MODEL = "text-embedding-ada-002"
-PINECONE_INDEX = index
-PINECONE_NAMESPACE = namespace
-PINECONE_API_KEY = pinecone_api_key
-PINECONE_ENV = pinecone_env
-WOLFRAM_API_KEY = wolfram_api_key
-WOLFRAM_NAME = wolfram_name
-
-
 
 
 def ask_wolfram_alpha(query, app_id=WOLFRAM_API_KEY):

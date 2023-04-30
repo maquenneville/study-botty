@@ -7,16 +7,14 @@ Created on Sat Apr 22 23:21:38 2023
 
 
 import docx
-import openpyxl
 import pandas as pd
 import chardet
-import io
 from pdfminer.high_level import extract_text
 import os
 import tiktoken
 from openai_pinecone_tools import generate_response
 import pytesseract
-from PIL import Image, ImageFile, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageFile
 
 
 encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -246,5 +244,3 @@ def ingest_folder(folder_path, progress=True):
 
     return context_chunks
 
-#print(ingest_folder(r"C:\Users\marca\Desktop\Coding\ChatGPT\embeddings\DocBot\test_input"))
-#print(process_table_file(r"C:\Users\marca\Desktop\Coding\ChatGPT\embeddings\AutoTutor\test_input\Raw Mussel data 2017 (1).xlsx"))

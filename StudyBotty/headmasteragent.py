@@ -5,35 +5,10 @@ Created on Sun Apr 23 18:01:28 2023
 @author: marca
 """
 
-from openai_pinecone_tools import generate_response
-import configparser
-import openai
+from openai_pinecone_tools import *
 
 
 
-def get_api_keys(config_file):
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    openai_api_key = config.get("API_KEYS", "OpenAI_API_KEY")
-    pinecone_api_key = config.get("API_KEYS", "Pinecone_API_KEY")
-    pinecone_env = config.get("API_KEYS", "Pinecone_ENV")
-    index = config.get("API_KEYS", "Pinecone_Index")
-    namespace = config.get("API_KEYS", "Namespace")
-
-    return openai_api_key, pinecone_api_key, pinecone_env, index, namespace
-
-openai_api_key, pinecone_api_key, pinecone_env, index, namespace = get_api_keys('config.ini')
-
-openai.api_key = openai_api_key
-
-
-CHAT_MODEL = "gpt-3.5-turbo"
-EMBEDDING_MODEL = "text-embedding-ada-002"
-PINECONE_INDEX = index
-PINECONE_NAMESPACE = namespace
-PINECONE_API_KEY = pinecone_api_key
-PINECONE_ENV = pinecone_env
 AGENT_LIST = """
 Agent List:
 
@@ -41,6 +16,7 @@ DocAgent:  For basic questions over regular documentation, essays, syllabi, read
 TableAgent: For questions regarding provided comma seperated value text data.
 MathAgent: For math-based or quantity-based questions.  It has access to Wolfram Alpha and all it's datasets.
 LiteratureAgent: For questions regarding English Literature.  Best used for more subjective and/or nuanced questions around writing and literature, that require more in-depth answers.
+ScienceAgent: For questions related to the sciences.  Best for answering questions rooted in biology, chemistry, climatology, and other specific scientific fields.
 """
 
 def headmaster_agent(query, context, agent_list=AGENT_LIST):

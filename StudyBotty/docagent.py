@@ -10,43 +10,9 @@ import os
 import tiktoken
 import configparser
 import openai
-from openai_pinecone_tools import generate_response
+from openai_pinecone_tools import *
 
 
-
-
-encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-
-
-
-def count_tokens(text):
-    tokens = len(encoding.encode(text))
-    return tokens
-
-def get_api_keys(config_file):
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    openai_api_key = config.get("API_KEYS", "OpenAI_API_KEY")
-    pinecone_api_key = config.get("API_KEYS", "Pinecone_API_KEY")
-    pinecone_env = config.get("API_KEYS", "Pinecone_ENV")
-    index = config.get("API_KEYS", "Pinecone_Index")
-    namespace = config.get("API_KEYS", "Namespace")
-
-
-    return openai_api_key, pinecone_api_key, pinecone_env, index, namespace
-
-openai_api_key, pinecone_api_key, pinecone_env, index, namespace = get_api_keys('config.ini')
-
-openai.api_key = openai_api_key
-
-
-CHAT_MODEL = "gpt-3.5-turbo"
-EMBEDDING_MODEL = "text-embedding-ada-002"
-PINECONE_INDEX = index
-PINECONE_NAMESPACE = namespace
-PINECONE_API_KEY = pinecone_api_key
-PINECONE_ENV = pinecone_env
 
 
 
@@ -122,4 +88,4 @@ def doc_agent(
     return response.strip(" \n")
 
 
-#print(fetch_context_from_pinecone("What are the columns in the Raw Mussel data 2017 (1) table?"))
+

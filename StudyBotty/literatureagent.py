@@ -6,33 +6,10 @@ Created on Mon Apr 24 21:58:24 2023
 """
 
 
-from openai_pinecone_tools import generate_response
+from openai_pinecone_tools import *
 import openai
 import configparser
 
-def get_api_keys(config_file):
-    config = configparser.ConfigParser()
-    config.read(config_file)
-
-    openai_api_key = config.get("API_KEYS", "OpenAI_API_KEY")
-    pinecone_api_key = config.get("API_KEYS", "Pinecone_API_KEY")
-    pinecone_env = config.get("API_KEYS", "Pinecone_ENV")
-    index = config.get("API_KEYS", "Pinecone_Index")
-    namespace = config.get("API_KEYS", "Namespace")
-
-    return openai_api_key, pinecone_api_key, pinecone_env, index, namespace
-
-openai_api_key, pinecone_api_key, pinecone_env, index, namespace = get_api_keys('config.ini')
-
-openai.api_key = openai_api_key
-
-
-CHAT_MODEL = "gpt-3.5-turbo"
-EMBEDDING_MODEL = "text-embedding-ada-002"
-PINECONE_INDEX = index
-PINECONE_NAMESPACE = namespace
-PINECONE_API_KEY = pinecone_api_key
-PINECONE_ENV = pinecone_env
 
 
 def literature_agent(query, context):

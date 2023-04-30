@@ -14,9 +14,10 @@ from openai.error import RateLimitError, InvalidRequestError, APIError
 import pinecone
 from pinecone import PineconeProtocolError
 import time
-from tqdm import tqdm
 import pandas as pd
-
+from tqdm.auto import tqdm
+import asyncio
+import tqdm.asyncio as async_tqdm
 
 
 
@@ -37,11 +38,16 @@ def get_api_keys(config_file):
     pinecone_env = config.get("API_KEYS", "Pinecone_ENV")
     index = config.get("API_KEYS", "Pinecone_Index")
     namespace = config.get("API_KEYS", "Namespace")
+    google_namespace = config.get("API_KEYS", "Google_Namespace")
+    google_api_key = config.get("API_KEYS", "Google_API_KEY ")
+    wolfram_api_key = config.get("API_KEYS", "Wolfram_API_KEY ")
+    google_id = config.get("API_KEYS", "Google_Search_ID")
 
 
-    return openai_api_key, pinecone_api_key, pinecone_env, index, namespace
 
-openai_api_key, pinecone_api_key, pinecone_env, index, namespace = get_api_keys('config.ini')
+    return openai_api_key, pinecone_api_key, pinecone_env, index, namespace, google_namespace, google_api_key, wolfram_api_key, google_id
+
+openai_api_key, pinecone_api_key, pinecone_env, index, namespace, google_namespace, google_api_key, wolfram_api_key, google_id = get_api_keys('config.ini')
 
 openai.api_key = openai_api_key
 
@@ -52,6 +58,10 @@ PINECONE_INDEX = index
 PINECONE_NAMESPACE = namespace
 PINECONE_API_KEY = pinecone_api_key
 PINECONE_ENV = pinecone_env
+GOOGLE_NAMESPACE = google_namespace
+GOOGLE_API_KEY = google_api_key
+GOOGLE_ID = google_id
+WOLFRAM_API_KEY = wolfram_api_key
 
 
 
@@ -233,10 +243,27 @@ def generate_response(
     return response
 
 
-#print(fetch_context_from_pinecone("What are the columns in the Raw Mussel data 2017 (1) table?"))
-# =============================================================================
-# print(generate_response([
-#     {"role": "system", "content": "You are a helpful assistant."},
-#     {"role": "user", "content": "Tell me a joke."}
-#     ], model_engine="gpt-4"))
-# =============================================================================
+async def calculate_embedding_async(chunk):
+    loop = asyncio.get_event_loop()
+    embedding = await loop.run_in_executor(None, get_embedding, chunk)
+    return embedding
+
+async def create_embeddings_dataframe_async(context_chunks):
+    tasks = [calculate_embedding_async(chunk) for chunk in context_chunks]
+
+    # Calculate embeddings for each chunk with a progress bar
+    embeddings = []
+    for future in async_tqdm.tqdm.as_completed(tasks, desc="Calculating embeddings"):
+        embedding = await future
+        embeddings.append(embedding)
+
+    # Create the DataFrame with index and chunk columns
+    df = pd.DataFrame({"index": range(len(context_chunks)), "chunk": context_chunks})
+
+    # Add the embeddings to the DataFrame in separate columns with the naming convention "embedding{num}"
+    embeddings_df = pd.DataFrame(embeddings, columns=[f"embedding{i}" for i in range(1536)])
+
+    # Concatenate the main DataFrame with the embeddings DataFrame
+    result_df = pd.concat([df, embeddings_df], axis=1)
+
+    return result_df
