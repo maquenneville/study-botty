@@ -39,8 +39,8 @@ def get_api_keys(config_file):
     index = config.get("API_KEYS", "Pinecone_Index")
     namespace = config.get("API_KEYS", "Namespace")
     google_namespace = config.get("API_KEYS", "Google_Namespace")
-    google_api_key = config.get("API_KEYS", "Google_API_KEY ")
-    wolfram_api_key = config.get("API_KEYS", "Wolfram_API_KEY ")
+    google_api_key = config.get("API_KEYS", "Google_API_KEY")
+    wolfram_api_key = config.get("API_KEYS", "Wolfram_API_KEY")
     google_id = config.get("API_KEYS", "Google_Search_ID")
 
 
@@ -52,7 +52,8 @@ openai_api_key, pinecone_api_key, pinecone_env, index, namespace, google_namespa
 openai.api_key = openai_api_key
 
 
-CHAT_MODEL = "gpt-3.5-turbo"
+SMART_CHAT_MODEL = "gpt-4"
+FAST_CHAT_MODEL = "gpt-3.5-turbo"
 EMBEDDING_MODEL = "text-embedding-ada-002"
 PINECONE_INDEX = index
 PINECONE_NAMESPACE = namespace
@@ -158,7 +159,7 @@ def store_embeddings_in_pinecone(namespace=PINECONE_NAMESPACE, index=PINECONE_IN
         
         
 
-def fetch_context_from_pinecone(query, top_n=5, index=PINECONE_INDEX, namespace=PINECONE_NAMESPACE, pinecone_api_key=PINECONE_API_KEY, pinecone_env=PINECONE_ENV):
+def fetch_context_from_pinecone(query, top_n=3, index=PINECONE_INDEX, namespace=PINECONE_NAMESPACE, pinecone_api_key=PINECONE_API_KEY, pinecone_env=PINECONE_ENV):
     # Initialize Pinecone
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
 
@@ -188,8 +189,6 @@ def fetch_context_from_pinecone(query, top_n=5, index=PINECONE_INDEX, namespace=
     
     # Retrieve metadata for the relevant embeddings
     context_chunks = [match['metadata']['context'] for match in query_response['matches']]
-    
-    #context = "\n".join(context_chunks)
 
     return context_chunks
 
@@ -197,21 +196,22 @@ def fetch_context_from_pinecone(query, top_n=5, index=PINECONE_INDEX, namespace=
 
 
 def generate_response(
-    messages, model_engine="gpt-3.5-turbo", temperature=0.5, n=1, max_tokens=4000, frequency_penalty=0
+    messages, model=FAST_CHAT_MODEL, temperature=0.5, n=1, max_tokens=4000, frequency_penalty=0
 ):
-
-    
-
+    token_ceiling = 4096
+    if model == 'gpt-4':
+        max_tokens = 8000
+        token_ceiling = 8000
     # Calculate the number of tokens in the messages
     tokens_used = sum([count_tokens(msg["content"]) for msg in messages])
-    tokens_available = 4096 - tokens_used
+    tokens_available = token_ceiling - tokens_used
 
     # Adjust max_tokens to not exceed the available tokens
     max_tokens = min(max_tokens, (tokens_available - 100))
 
     # Reduce max_tokens further if the total tokens exceed the model limit
-    if tokens_used + max_tokens > 4096:
-        max_tokens = 4096 - tokens_used - 10
+    if tokens_used + max_tokens > token_ceiling:
+        max_tokens = token_ceiling - tokens_used - 10
 
     if max_tokens < 1:
         max_tokens = 1
@@ -223,7 +223,7 @@ def generate_response(
         if retries < max_retries:
             try:
                 completion = openai.ChatCompletion.create(
-                    model=model_engine,
+                    model=model,
                     messages=messages,
                     n=n,
                     temperature=temperature,

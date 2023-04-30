@@ -8,7 +8,7 @@ Created on Sun Apr 30 02:32:48 2023
 
 from openai_pinecone_tools import *
 
-def science_agent(query, context):
+def science_agent(query, context, model=FAST_CHAT_MODEL):
     # Generate ChatGPT messages
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -23,6 +23,6 @@ def science_agent(query, context):
 
     
     # Use ChatGPT to generate a Wolfram Alpha natural language query
-    answer = generate_response(messages, temperature=0.1)
+    answer = generate_response(messages, temperature=0.1, model=model)
     
     return answer

@@ -35,7 +35,7 @@ def table_decision_agent(query, context):
     return can_answer
 
 
-def table_agent(query, context):
+def table_agent(query, context, model=FAST_CHAT_MODEL):
     
     messages = [
             {"role": "system", "content": "You are a helpful assistant."},
@@ -45,7 +45,7 @@ def table_agent(query, context):
         ]
     
     response = generate_response(
-        messages, temperature=0.0, n=1, max_tokens=500, frequency_penalty=0
+        messages, temperature=0.0, n=1, max_tokens=500, frequency_penalty=0, model=model
     )
 
     

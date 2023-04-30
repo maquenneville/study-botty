@@ -54,7 +54,7 @@ def math_strategy_agent(query, context):
     return best_strategy
 
 
-def math_agent(query, context):
+def math_agent(query, context, model=FAST_CHAT_MODEL):
     # Generate ChatGPT messages
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -68,7 +68,7 @@ def math_agent(query, context):
     messages.append({"role": "user", "content": f"Question:\n{query}"})
 
     # Use ChatGPT to generate a Wolfram Alpha natural language query
-    wolfram_query = generate_response(messages, temperature=0.1, max_tokens=40)
+    wolfram_query = generate_response(messages, temperature=0.1, max_tokens=40, model=model)
     print("\n\n" + wolfram_query)
     # Use ask_wolfram_alpha to get the answer
     answer = ask_wolfram_alpha(wolfram_query)

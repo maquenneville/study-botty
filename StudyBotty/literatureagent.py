@@ -12,7 +12,7 @@ import configparser
 
 
 
-def literature_agent(query, context):
+def literature_agent(query, context, model=FAST_CHAT_MODEL):
     # Generate ChatGPT messages
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -27,6 +27,6 @@ def literature_agent(query, context):
 
     
     # Use ChatGPT to generate a Wolfram Alpha natural language query
-    answer = generate_response(messages, temperature=0.4)
+    answer = generate_response(messages, temperature=0.4, model=model)
     
     return answer

@@ -77,14 +77,13 @@ def construct_prompt(
 def doc_agent(
     query: str,
     context: str,
-    show_prompt=False
+    model=FAST_CHAT_MODEL
 ):
     messages = construct_prompt(query, context)
 
-    if show_prompt:
-        print(messages)
 
-    response = generate_response(messages, temperature=0.5, n=1, max_tokens=1000, frequency_penalty=0)
+
+    response = generate_response(messages, temperature=0.5, n=1, max_tokens=1000, frequency_penalty=0, model=model)
     return response.strip(" \n")
 
 
