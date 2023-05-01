@@ -19,7 +19,7 @@ from PIL import Image, ImageFile
 
 encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
-#Set ImageFile to accept truncated images
+# Set ImageFile to accept truncated images
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 # Declare tesseract.exe
 tesseract_path = "C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -27,17 +27,17 @@ pytesseract.tesseract_cmd = tesseract_path
 
 
 def ocr_read_image(image_path):
-
-
     # Check if the file exists
     if not os.path.exists(image_path):
         raise ValueError("The file does not exist.")
 
     # Check if the file has a supported image extension
-    supported_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff'}
+    supported_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
     file_ext = os.path.splitext(image_path)[1].lower()
     if file_ext not in supported_extensions:
-        raise ValueError("Unsupported file extension. Please provide a supported image file.")
+        raise ValueError(
+            "Unsupported file extension. Please provide a supported image file."
+        )
 
     # Open the image file
     image = Image.open(image_path)
@@ -48,7 +48,6 @@ def ocr_read_image(image_path):
     return text
 
 
-
 def read_pdf(file_path):
     try:
         text = extract_text(file_path)
@@ -56,6 +55,7 @@ def read_pdf(file_path):
         print(f"Error reading PDF file {file_path}: {str(e)}")
         text = ""
     return text
+
 
 def read_docx(file_path):
     try:
@@ -67,16 +67,16 @@ def read_docx(file_path):
     return text
 
 
-
 def read_xlsx_file(file_path):
     try:
         df = pd.read_excel(file_path)
     except Exception as e:
         print(f"Error reading XLSX file {file_path}: {str(e)}")
         df = None
-        
+
     file_name = os.path.basename(file_path)
     return file_name, df
+
 
 def read_csv_file(file_path):
     try:
@@ -86,7 +86,7 @@ def read_csv_file(file_path):
     except Exception as e:
         print(f"Error reading CSV file {file_path}: {str(e)}")
         df = None
-    
+
     file_name = os.path.basename(file_path)
     return file_name, df
 
@@ -101,36 +101,34 @@ def read_txt(file_path):
     return text
 
 
-
 def csv_id_agent(context):
-    
     if len(context) > 2000:
-    
         context = context[:2000]
-    
+
     messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "You are my CSV Indentification Assistant. Your job is to take a block of text provided below, and decide if the text represents all or part of a comma separated value text.  You must decide, and must answer using either 'yes' or 'no'."},
-            {"role": "user", "content": f"Text to be identified: {context}"}
-        ]
-    
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": "You are my CSV Indentification Assistant. Your job is to take a block of text provided below, and decide if the text represents all or part of a comma separated value text.  You must decide, and must answer using either 'yes' or 'no'.",
+        },
+        {"role": "user", "content": f"Text to be identified: {context}"},
+    ]
+
     response = generate_response(
         messages, temperature=0.0, n=1, max_tokens=10, frequency_penalty=0
     )
     is_csv = None
-    
+
     if "yes" in response.lower():
         is_csv = True
     elif "no" in response.lower():
         is_csv = False
-        
+
     else:
         print("I can't tell is this is a CSV, I'm sorry!")
         return
-    
+
     return is_csv
-
-
 
 
 def process_table_file(file_path):
@@ -140,19 +138,21 @@ def process_table_file(file_path):
 
     file_ext = os.path.splitext(file_path)[1].lower()
 
-    if file_ext == '.csv':
+    if file_ext == ".csv":
         file_name, df = read_csv_file(file_path)
-    elif file_ext == '.xlsx':
+    elif file_ext == ".xlsx":
         file_name, df = read_xlsx_file(file_path)
     else:
-        raise ValueError("Unsupported file extension. Please provide a CSV or XLSX file.")
+        raise ValueError(
+            "Unsupported file extension. Please provide a CSV or XLSX file."
+        )
 
     if df is None:
         return None
 
     plain_csv_text = df.to_csv(index=False)
     rows = plain_csv_text.split("\n")
-    
+
     chunk_tokens = 0
     chunks = []
     chunk = ""
@@ -173,12 +173,8 @@ def process_table_file(file_path):
         chunks.append(chunk)
 
     chunks = [f"{file_name}\n{chunk}" for chunk in chunks]
-    
+
     return chunks
-
-
-
-
 
 
 def ingester(file_path):
@@ -191,12 +187,11 @@ def ingester(file_path):
         return process_table_file(file_path)
     elif extension == "txt":
         return read_txt(file_path)
-    elif extension in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']:
+    elif extension in [".jpg", ".jpeg", ".png", ".bmp", ".tiff"]:
         return ocr_read_image(file_path)
     else:
         print(f"Unsupported file type: {extension}")
         return ""
-    
 
 
 def chunk_text(text, chunk_size=1000):
@@ -205,7 +200,6 @@ def chunk_text(text, chunk_size=1000):
     current_chunk = ""
 
     for word in words:
-        
         # Check if adding the word to the current chunk would exceed the chunk size
         if len(current_chunk) + len(word) + 1 > chunk_size:
             # If so, add the current chunk to the chunks list and start a new chunk with the current word
@@ -218,15 +212,19 @@ def chunk_text(text, chunk_size=1000):
     # Add the last chunk to the chunks list
     if current_chunk:
         chunks.append(current_chunk.strip())
-    
 
     return chunks
+
 
 def ingest_folder(folder_path, progress=True):
     context_chunks = []
 
     # List all files in the folder
-    file_paths = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    file_paths = [
+        os.path.join(folder_path, f)
+        for f in os.listdir(folder_path)
+        if os.path.isfile(os.path.join(folder_path, f))
+    ]
     total_files = len(file_paths)
 
     for i, file_path in enumerate(file_paths):
@@ -238,9 +236,8 @@ def ingest_folder(folder_path, progress=True):
         if isinstance(text, str):
             chunks = chunk_text(text)
             context_chunks.extend(chunks)
-        
+
         else:
             context_chunks.extend(text)
 
     return context_chunks
-

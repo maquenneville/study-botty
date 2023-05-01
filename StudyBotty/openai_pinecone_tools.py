@@ -6,7 +6,6 @@ Created on Sun Apr 23 18:31:41 2023
 """
 
 
-
 import tiktoken
 import configparser
 import openai
@@ -20,14 +19,13 @@ import asyncio
 import tqdm.asyncio as async_tqdm
 
 
-
 encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-
 
 
 def count_tokens(text):
     tokens = len(encoding.encode(text))
     return tokens
+
 
 def get_api_keys(config_file):
     config = configparser.ConfigParser()
@@ -43,11 +41,30 @@ def get_api_keys(config_file):
     wolfram_api_key = config.get("API_KEYS", "Wolfram_API_KEY")
     google_id = config.get("API_KEYS", "Google_Search_ID")
 
+    return (
+        openai_api_key,
+        pinecone_api_key,
+        pinecone_env,
+        index,
+        namespace,
+        google_namespace,
+        google_api_key,
+        wolfram_api_key,
+        google_id,
+    )
 
 
-    return openai_api_key, pinecone_api_key, pinecone_env, index, namespace, google_namespace, google_api_key, wolfram_api_key, google_id
-
-openai_api_key, pinecone_api_key, pinecone_env, index, namespace, google_namespace, google_api_key, wolfram_api_key, google_id = get_api_keys('config.ini')
+(
+    openai_api_key,
+    pinecone_api_key,
+    pinecone_env,
+    index,
+    namespace,
+    google_namespace,
+    google_api_key,
+    wolfram_api_key,
+    google_id,
+) = get_api_keys("config.ini")
 
 openai.api_key = openai_api_key
 
@@ -65,14 +82,10 @@ GOOGLE_ID = google_id
 WOLFRAM_API_KEY = wolfram_api_key
 
 
-
-def get_embedding(text: str, model: str=EMBEDDING_MODEL):
+def get_embedding(text: str, model: str = EMBEDDING_MODEL):
     while True:
         try:
-            result = openai.Embedding.create(
-              model=model,
-              input=text
-            )
+            result = openai.Embedding.create(model=model, input=text)
             break
         except (APIError, RateLimitError):
             print("OpenAI had an issue, trying again in a few seconds...")
@@ -80,10 +93,7 @@ def get_embedding(text: str, model: str=EMBEDDING_MODEL):
     return result["data"][0]["embedding"]
 
 
-
 def create_embeddings_dataframe(context_chunks):
-
-
     # Calculate embeddings for each chunk with a progress bar
     embeddings = []
     for chunk in tqdm(context_chunks, desc="Calculating embeddings"):
@@ -94,7 +104,9 @@ def create_embeddings_dataframe(context_chunks):
     df = pd.DataFrame({"index": range(len(context_chunks)), "chunk": context_chunks})
 
     # Add the embeddings to the DataFrame in separate columns with the naming convention "embedding{num}"
-    embeddings_df = pd.DataFrame(embeddings, columns=[f"embedding{i}" for i in range(1536)])
+    embeddings_df = pd.DataFrame(
+        embeddings, columns=[f"embedding{i}" for i in range(1536)]
+    )
 
     # Concatenate the main DataFrame with the embeddings DataFrame
     result_df = pd.concat([df, embeddings_df], axis=1)
@@ -102,7 +114,13 @@ def create_embeddings_dataframe(context_chunks):
     return result_df
 
 
-def store_embeddings_in_pinecone(namespace=PINECONE_NAMESPACE, index=PINECONE_INDEX, pinecone_api_key=PINECONE_API_KEY, pinecone_env=PINECONE_ENV, dataframe=None):
+def store_embeddings_in_pinecone(
+    namespace=PINECONE_NAMESPACE,
+    index=PINECONE_INDEX,
+    pinecone_api_key=PINECONE_API_KEY,
+    pinecone_env=PINECONE_ENV,
+    dataframe=None,
+):
     # Initialize Pinecone
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
 
@@ -122,9 +140,9 @@ def store_embeddings_in_pinecone(namespace=PINECONE_NAMESPACE, index=PINECONE_IN
 
         for index, row in dataframe.iterrows():
             context_chunk = row["chunk"]
-            
+
             vector = [float(row[f"embedding{i}"]) for i in range(1536)]
-            
+
             pine_index = f"hw_{index}"
             metadata = {"context": context_chunk}
             vectors_to_upsert.append((pine_index, vector, metadata))
@@ -132,11 +150,9 @@ def store_embeddings_in_pinecone(namespace=PINECONE_NAMESPACE, index=PINECONE_IN
             # Upsert when the batch is full or it's the last row
             if len(vectors_to_upsert) == batch_size or index == len(dataframe) - 1:
                 while True:
-                     
                     try:
                         upsert_response = pinecone_index.upsert(
-                            vectors=vectors_to_upsert,
-                            namespace=namespace
+                            vectors=vectors_to_upsert, namespace=namespace
                         )
 
                         batch_count += 1
@@ -147,7 +163,9 @@ def store_embeddings_in_pinecone(namespace=PINECONE_NAMESPACE, index=PINECONE_IN
                         break
 
                     except pinecone.core.client.exceptions.ApiException:
-                        print("Pinecone is a little overwhelmed, trying again in a few seconds...")
+                        print(
+                            "Pinecone is a little overwhelmed, trying again in a few seconds..."
+                        )
                         time.sleep(10)
 
         # Close the progress bar after completing all upserts
@@ -155,11 +173,16 @@ def store_embeddings_in_pinecone(namespace=PINECONE_NAMESPACE, index=PINECONE_IN
 
     else:
         print("No dataframe to retrieve embeddings")
-        
-        
-        
 
-def fetch_context_from_pinecone(query, top_n=3, index=PINECONE_INDEX, namespace=PINECONE_NAMESPACE, pinecone_api_key=PINECONE_API_KEY, pinecone_env=PINECONE_ENV):
+
+def fetch_context_from_pinecone(
+    query,
+    top_n=3,
+    index=PINECONE_INDEX,
+    namespace=PINECONE_NAMESPACE,
+    pinecone_api_key=PINECONE_API_KEY,
+    pinecone_env=PINECONE_ENV,
+):
     # Initialize Pinecone
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
 
@@ -168,8 +191,7 @@ def fetch_context_from_pinecone(query, top_n=3, index=PINECONE_INDEX, namespace=
 
     # Query Pinecone for the most similar embeddings
     pinecone_index = pinecone.Index(index_name=index)
-    
-    
+
     while True:
         try:
             query_response = pinecone_index.query(
@@ -177,29 +199,33 @@ def fetch_context_from_pinecone(query, top_n=3, index=PINECONE_INDEX, namespace=
                 top_k=top_n,
                 include_values=False,
                 include_metadata=True,
-                vector=query_embedding
-                
+                vector=query_embedding,
             )
             break
-        
+
         except PineconeProtocolError:
             print("Pinecone needs a moment....")
             time.sleep(3)
             continue
-    
+
     # Retrieve metadata for the relevant embeddings
-    context_chunks = [match['metadata']['context'] for match in query_response['matches']]
+    context_chunks = [
+        match["metadata"]["context"] for match in query_response["matches"]
+    ]
 
     return context_chunks
 
 
-
-
 def generate_response(
-    messages, model=FAST_CHAT_MODEL, temperature=0.5, n=1, max_tokens=4000, frequency_penalty=0
+    messages,
+    model=FAST_CHAT_MODEL,
+    temperature=0.5,
+    n=1,
+    max_tokens=4000,
+    frequency_penalty=0,
 ):
     token_ceiling = 4096
-    if model == 'gpt-4':
+    if model == "gpt-4":
         max_tokens = 8000
         token_ceiling = 8000
     # Calculate the number of tokens in the messages
@@ -248,6 +274,7 @@ async def calculate_embedding_async(chunk):
     embedding = await loop.run_in_executor(None, get_embedding, chunk)
     return embedding
 
+
 async def create_embeddings_dataframe_async(context_chunks):
     tasks = [calculate_embedding_async(chunk) for chunk in context_chunks]
 
@@ -261,7 +288,9 @@ async def create_embeddings_dataframe_async(context_chunks):
     df = pd.DataFrame({"index": range(len(context_chunks)), "chunk": context_chunks})
 
     # Add the embeddings to the DataFrame in separate columns with the naming convention "embedding{num}"
-    embeddings_df = pd.DataFrame(embeddings, columns=[f"embedding{i}" for i in range(1536)])
+    embeddings_df = pd.DataFrame(
+        embeddings, columns=[f"embedding{i}" for i in range(1536)]
+    )
 
     # Concatenate the main DataFrame with the embeddings DataFrame
     result_df = pd.concat([df, embeddings_df], axis=1)

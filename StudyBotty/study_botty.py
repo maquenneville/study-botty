@@ -20,7 +20,6 @@ import time
 import sys
 
 
-        
 class Spinner:
     def __init__(self, message="Thinking..."):
         self._message = message
@@ -41,7 +40,9 @@ class Spinner:
         index = 0
 
         while self._running:
-            sys.stdout.write(f"\r{self._message} {spinner_chars[index % len(spinner_chars)]}")
+            sys.stdout.write(
+                f"\r{self._message} {spinner_chars[index % len(spinner_chars)]}"
+            )
             sys.stdout.flush()
             time.sleep(0.1)
             index += 1
@@ -51,13 +52,11 @@ class Spinner:
         sys.stdout.flush()
 
 
-
 def main():
-    
     model = FAST_CHAT_MODEL
-    
+
     spinner = Spinner()
-    
+
     print("\n\nWelcome to Study Botty!")
 
     def add_documents():
@@ -74,22 +73,25 @@ def main():
     print("\n\nOk, I'm ready for your questions!\n")
 
     while True:
-        query = input("\nEnter your question or enter a command (type 'help' for command list): ")
+        query = input(
+            "\nEnter your question or enter a command (type 'help' for command list): "
+        )
 
         if query.lower() == "exit":
             break
-        
+
         elif query.lower() == "smart tutor":
             model = SMART_CHAT_MODEL
-            
+
         elif query.lower() == "simple tutor":
             model = FAST_CHAT_MODEL
-            
+
         elif query.lower() == "add docs":
             add_documents()
-        
-        elif query.lower() == 'help':
-            print("""
+
+        elif query.lower() == "help":
+            print(
+                """
                   Commands:
                       
                     add docs: takes you back to allow another document folder to be stored
@@ -102,19 +104,17 @@ def main():
                                         
                     exit: close the program
                                           
-                  """)
-        
-
-        
+                  """
+            )
 
         # Start spinner with the default description
         spinner.start()
 
         # Retrieve the context from Pinecone
         context = fetch_context_from_pinecone(query)
-        
+
         faculty = headmaster_agent(query, context)
-        
+
         if faculty == "DocAgent":
             answer = doc_agent(query, context, model=model)
         elif faculty == "TableAgent":
@@ -125,19 +125,18 @@ def main():
             answer = literature_agent(query, context, model=model)
         elif faculty == "ScienceAgent":
             answer = science_agent(query, context, model=model)
-            
+
         # Check if ChatGPT answered the query with the given context
         did_answer = answer_decision_agent(query, context, answer)
 
         if not did_answer:
-            
             print("\nCould not find answer from context, searching Google...\n")
 
             # If ChatGPT cannot answer with the given context, use the google_search_agent
             context = google_search_agent(query)
-            
+
             faculty = headmaster_agent(query, context)
-            
+
             if faculty == "DocAgent":
                 answer = doc_agent(query, context, model=model)
             elif faculty == "TableAgent":
@@ -152,10 +151,6 @@ def main():
         # Stop the spinner before printing the answer
         spinner.stop()
         print(f"\nAnswer: {answer}")
-
-
-
-
 
 
 if __name__ == "__main__":
