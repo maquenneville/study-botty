@@ -15,14 +15,18 @@ StudyBotty is an AI-powered question-answering system that helps users find answ
 
   pip install -r requirements.txt
   
-- Fill in the required fields in the config.ini file, including your Pinecone API key, Pinecone Environment, Pinecone Index name, OpenAI API key, Wolfram Alpha API key, Google Custom Search Engine API key and Google Custom Search Engine ID.
+- Fill in the required fields in the config.ini file, including your Pinecone API key, Pinecone Environment, Pinecone Index name, OpenAI API key, Wolfram Alpha API key, Google Custom Search Engine API key, Google Custom Search Engine ID and ElevenLabs API key.
 
 # Usage
 - To start StudyBotty, run the main script:
 
 python study_botty.py
 
+- StudyBotty will ask if you'd like enhanced accessibility, you can either enter "yes" or simply press enter to begin the voice prompting.  Accessibility mode is still in it's early stages and does not yet support adding folders of docs.
+
 - StudyBotty will prompt you to add a folder of documents. If you choose to add documents, enter the folder path when prompted. StudyBotty will ingest the documents, process them, and store their embeddings.
+
+- StudyBotty will then ask if you'd like Google Assist for question-answering.  This will unlock the use of a google agent that will attempt to use google search to find an answer if one is not present in the docs.
 
 Once the setup is complete, StudyBotty will be ready to answer your questions. Enter your question at the prompt, or enter a command (for switching between gpt-4/gpt-3.5-turbo, as well as an option for adding more docs mid QA session).  If it's a question, StudyBotty will use the appropriate agent to find the best answer. If an answer cannot be found within the pre-loaded documents, StudyBotty will search Google for additional context before attempting to answer your question again.
 
