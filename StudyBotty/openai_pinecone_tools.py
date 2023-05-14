@@ -17,6 +17,12 @@ import pandas as pd
 from tqdm.auto import tqdm
 import asyncio
 import tqdm.asyncio as async_tqdm
+from pydub import AudioSegment
+import os
+import math
+import tempfile
+from elevenlabs import set_api_key
+import sys
 
 
 encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -40,6 +46,7 @@ def get_api_keys(config_file):
     google_api_key = config.get("API_KEYS", "Google_API_KEY")
     wolfram_api_key = config.get("API_KEYS", "Wolfram_API_KEY")
     google_id = config.get("API_KEYS", "Google_Search_ID")
+    eleven_labs_api_key = config.get("API_KEYS", "Eleven_Labs_API_KEY")
 
     return (
         openai_api_key,
@@ -51,6 +58,7 @@ def get_api_keys(config_file):
         google_api_key,
         wolfram_api_key,
         google_id,
+        eleven_labs_api_key
     )
 
 
@@ -64,9 +72,11 @@ def get_api_keys(config_file):
     google_api_key,
     wolfram_api_key,
     google_id,
+    eleven_labs_api_key
 ) = get_api_keys("config.ini")
 
 openai.api_key = openai_api_key
+
 
 
 SMART_CHAT_MODEL = "gpt-4"
@@ -80,6 +90,7 @@ GOOGLE_NAMESPACE = google_namespace
 GOOGLE_API_KEY = google_api_key
 GOOGLE_ID = google_id
 WOLFRAM_API_KEY = wolfram_api_key
+ELEVENLABS_API_KEY = eleven_labs_api_key
 
 
 def get_embedding(text: str, model: str = EMBEDDING_MODEL):
@@ -93,12 +104,19 @@ def get_embedding(text: str, model: str = EMBEDDING_MODEL):
     return result["data"][0]["embedding"]
 
 
+
 def create_embeddings_dataframe(context_chunks):
     # Calculate embeddings for each chunk with a progress bar
     embeddings = []
-    for chunk in tqdm(context_chunks, desc="Calculating embeddings"):
+    progress_bar = tqdm(total=len(context_chunks), desc="Calculating embeddings", position=0)
+    
+    for chunk in context_chunks:
         embedding = get_embedding(chunk)
         embeddings.append(embedding)
+        progress_bar.update(1)  # Increment the progress bar after each embedding calculation
+        sys.stdout.flush()
+
+    progress_bar.close()  # Close the progress bar when the loop is finished
 
     # Create the DataFrame with index and chunk columns
     df = pd.DataFrame({"index": range(len(context_chunks)), "chunk": context_chunks})
@@ -112,6 +130,9 @@ def create_embeddings_dataframe(context_chunks):
     result_df = pd.concat([df, embeddings_df], axis=1)
 
     return result_df
+
+
+
 
 
 def store_embeddings_in_pinecone(
@@ -136,7 +157,7 @@ def store_embeddings_in_pinecone(
         total_batches = -(-len(dataframe) // batch_size)
 
         # Create a tqdm progress bar object
-        progress_bar = tqdm(total=total_batches, desc="Loading info into Pinecone")
+        progress_bar = tqdm(total=total_batches, desc="Loading info into Pinecone", position=0)
 
         for index, row in dataframe.iterrows():
             context_chunk = row["chunk"]
@@ -160,6 +181,7 @@ def store_embeddings_in_pinecone(
 
                         # Update the progress bar
                         progress_bar.update(1)
+                        sys.stdout.flush()
                         break
 
                     except pinecone.core.client.exceptions.ApiException:
@@ -269,30 +291,51 @@ def generate_response(
     return response
 
 
-async def calculate_embedding_async(chunk):
-    loop = asyncio.get_event_loop()
-    embedding = await loop.run_in_executor(None, get_embedding, chunk)
-    return embedding
+def transcribe_using_whisper(audio_file):
+    
+
+    # Convert input audio to WAV format
+    audio = AudioSegment.from_file(audio_file)
+    audio = audio.set_channels(1)  # Ensure mono audio
+
+    size = os.path.getsize(audio_file)
+    max_chunk_size = 25000000
+
+    full_trans = []
 
 
-async def create_embeddings_dataframe_async(context_chunks):
-    tasks = [calculate_embedding_async(chunk) for chunk in context_chunks]
+    if size > max_chunk_size:
+        audio_length = len(audio)
+        num_chunks = math.ceil(size / max_chunk_size)
 
-    # Calculate embeddings for each chunk with a progress bar
-    embeddings = []
-    for future in async_tqdm.tqdm.as_completed(tasks, desc="Calculating embeddings"):
-        embedding = await future
-        embeddings.append(embedding)
+        # Calculate the length of each chunk in milliseconds
+        chunk_length_ms = math.ceil(audio_length / num_chunks)
 
-    # Create the DataFrame with index and chunk columns
-    df = pd.DataFrame({"index": range(len(context_chunks)), "chunk": context_chunks})
+        # Split the audio into chunks
+        chunks = [audio[i*chunk_length_ms:(i+1)*chunk_length_ms] for i in range(num_chunks)]
 
-    # Add the embeddings to the DataFrame in separate columns with the naming convention "embedding{num}"
-    embeddings_df = pd.DataFrame(
-        embeddings, columns=[f"embedding{i}" for i in range(1536)]
-    )
+        for chunk in chunks:
+            # Create a temporary WAV file
+            fd, tmp_file_path = tempfile.mkstemp(suffix=".wav")
+            os.close(fd)
+            try:
+                # Export the chunk to the temporary file
+                chunk.export(tmp_file_path, format="wav")
 
-    # Concatenate the main DataFrame with the embeddings DataFrame
-    result_df = pd.concat([df, embeddings_df], axis=1)
+                with open(tmp_file_path, "rb") as tmp_file:
+                    transcript = openai.Audio.transcribe("whisper-1", tmp_file)
+                    full_trans.append(transcript.text)
 
-    return result_df
+            finally:
+                # Remove the temporary WAV file
+                os.remove(tmp_file_path)
+
+        full_trans = "".join(full_trans)
+
+    else:
+        with open(audio_file, "rb") as audio_file:
+            full_trans = openai.Audio.transcribe("whisper-1", audio_file)
+            full_trans = full_trans.text
+
+    
+    return full_trans

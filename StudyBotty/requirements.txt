@@ -17,3 +17,5 @@ chardet
 pdfminer.six
 tqdm
 wolframalpha
+elevenlabs
+pyaudio

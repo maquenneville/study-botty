@@ -12,9 +12,15 @@ import chardet
 from pdfminer.high_level import extract_text
 import os
 import tiktoken
-from openai_pinecone_tools import generate_response
+from openai_pinecone_tools import generate_response, transcribe_using_whisper, ELEVENLABS_API_KEY
 import pytesseract
 from PIL import Image, ImageFile
+import pyaudio
+import wave
+from elevenlabs import generate, play, voices
+from elevenlabs import set_api_key
+
+set_api_key(ELEVENLABS_API_KEY)
 
 
 encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -241,3 +247,86 @@ def ingest_folder(folder_path, progress=True):
             context_chunks.extend(text)
 
     return context_chunks
+
+
+
+def record_audio(filename, duration=5):
+    # Set the sample format, channels, rate, and chunk size
+    sample_format = pyaudio.paInt16
+    channels = 1
+    rate = 44100
+    chunk = 1024
+
+    # Initialize the PyAudio object
+    audio = pyaudio.PyAudio()
+
+    # Open the stream for recording
+    stream = audio.open(format=sample_format,
+                        channels=channels,
+                        rate=rate,
+                        input=True,
+                        frames_per_buffer=chunk)
+
+    # Record audio
+    print("Listening...")
+    frames = []
+    for _ in range(0, int(rate / chunk * duration)):
+        data = stream.read(chunk)
+        frames.append(data)
+
+    # Stop and close the stream
+    stream.stop_stream()
+    stream.close()
+
+    # Terminate the PyAudio object
+    audio.terminate()
+
+    # Save the recorded audio as a .wav file
+    with wave.open(filename, 'wb') as wf:
+        wf.setnchannels(channels)
+        wf.setsampwidth(audio.get_sample_size(sample_format))
+        wf.setframerate(rate)
+        wf.writeframes(b''.join(frames))
+
+    print("Response saved")
+    
+
+
+
+def listen(duration=5):
+    # Record audio and save it as a .wav file
+    audio_file = "recorded_audio.wav"
+    record_audio(audio_file, duration)
+
+    # Transcribe the recorded audio
+    transcript = transcribe_using_whisper(audio_file)
+
+    # Remove the temporary .wav file
+    if os.path.exists(audio_file):
+        os.remove(audio_file)
+    
+    print(transcript)
+    return transcript
+
+
+
+def text_to_speech(text, voice_name="Rachel"):
+    # Get the list of available voices
+    available_voices = voices()
+
+    # Find the desired voice
+    voice = next((v for v in available_voices if v.name == voice_name), None)
+
+    if voice is not None:
+        # Generate audio from the text
+        audio = generate(text=text, voice=voice.voice_id, model="eleven_monolingual_v1")
+
+        # Play the generated audio
+        play(audio)
+    else:
+        print(f"Voice '{voice_name}' not found.")
+
+
+
+
+
