@@ -8,6 +8,7 @@ StudyBotty is an AI-powered question-answering system that helps users find answ
 - Determines the appropriate agent (DocAgent, TableAgent, MathAgent, LiteratureAgent, or ScienceAgent, more to come) to answer a given question.
 - If an answer isn't found within the pre-loaded documents, StudyBotty searches Google for additional context.
 - Utilizes OpenAI's ChatGPT for natural language understanding and generation.
+- New enhanced accessibility for interacting using only voice commands, with AI-generated voice responses.
 
 # Setup
 - Clone the repository to your chosen directory
